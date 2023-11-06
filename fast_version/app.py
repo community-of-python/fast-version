@@ -108,6 +108,7 @@ def _custom_openapi(self: fastapi.FastAPI) -> dict[str, typing.Any]:
     methods: dict[str, typing.Any]
     for raw_path, methods in self.openapi_schema["paths"].items():
         if ":" not in raw_path:
+            paths_dict[raw_path] = methods
             continue
         clean_path, version = raw_path.split(":")
         for payload in methods.values():

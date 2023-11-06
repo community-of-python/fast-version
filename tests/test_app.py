@@ -96,7 +96,7 @@ async def test_openapi_schema(test_client: TestClient) -> None:
     response = test_client.get("/openapi.json")
     assert response.status_code == status.HTTP_200_OK
     paths: dict[str, typing.Any] = response.json()["paths"]
-    assert len(paths) == 1
+    assert len(paths) == amount_of_versions
     assert set(paths["/test/"].keys()) == {"get", "post"}
     assert len(paths["/test/"]["get"]["responses"]["200"]["content"]) == amount_of_versions
     assert len(paths["/test/"]["post"]["responses"]["200"]["content"]) == amount_of_versions
