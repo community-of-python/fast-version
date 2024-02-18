@@ -51,7 +51,9 @@ class VersionedAPIRouter(APIRouter):
                 @ClassProperty
                 def media_type(self) -> str:  # type: ignore[override]
                     """Media type for docs."""
-                    return f"{VersionedAPIRouter.VENDOR_MEDIA_TYPE}; version={version_str}"
+                    return (
+                        f"{VersionedAPIRouter.VENDOR_MEDIA_TYPE}; version={version_str}"
+                    )
 
             kwargs["response_class"] = VersionedJSONResponse
             kwargs["route_class_override"] = VersionedAPIRoute
@@ -61,7 +63,9 @@ class VersionedAPIRouter(APIRouter):
         return decorator
 
     @staticmethod
-    def set_api_version(version: tuple[int, int]) -> typing.Callable[[DecoratedCallable], DecoratedCallable]:
+    def set_api_version(
+        version: tuple[int, int],
+    ) -> typing.Callable[[DecoratedCallable], DecoratedCallable]:
         def decorator(func: DecoratedCallable) -> DecoratedCallable:
             setattr(func, "version", version)
             return func

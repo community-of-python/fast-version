@@ -30,7 +30,12 @@ class FastAPIVersioningMiddleware:
     def __init__(self, app: fastapi.FastAPI) -> None:
         self.app = app
 
-    async def __call__(self, scope: types.Scope, receive: types.Receive, send: types.Send) -> None:
+    async def __call__(
+        self,
+        scope: types.Scope,
+        receive: types.Receive,
+        send: types.Send,
+    ) -> None:
         error_response: JSONResponse | None = None
         while True:
             if scope["type"] != "http":
@@ -48,7 +53,10 @@ class FastAPIVersioningMiddleware:
                 break
 
             if media_type.strip() != _get_vendor_media_type():
-                error_response = JSONResponse({"detail": "Wrong media type"}, status_code=406)
+                error_response = JSONResponse(
+                    {"detail": "Wrong media type"},
+                    status_code=406,
+                )
                 break
 
             version = ""
@@ -57,7 +65,10 @@ class FastAPIVersioningMiddleware:
                 version_key, version = version_str.strip().split("=")
 
             if version_key.lower().strip() != "version":
-                error_response = JSONResponse({"detail": "No version in Accept header"}, status_code=400)
+                error_response = JSONResponse(
+                    {"detail": "No version in Accept header"},
+                    status_code=400,
+                )
                 break
 
             if not _VERSION_RE.match(version):
@@ -67,7 +78,9 @@ class FastAPIVersioningMiddleware:
                 )
                 break
 
-            scope["version"] = tuple(int(version_part) for version_part in version.split("."))
+            scope["version"] = tuple(
+                int(version_part) for version_part in version.split(".")
+            )
             break
         if error_response:
             return await error_response(scope, receive, send)
