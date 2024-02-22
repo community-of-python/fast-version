@@ -3,6 +3,13 @@ FastAPI versioning library
 This package adds versioning by Accept-header into FastAPI
 
 ## Quickstart:
+
+### Installation
+
+```shell
+$ pip install fast-version
+```
+
 ### Defining app and routes
 ```python
 import fastapi
