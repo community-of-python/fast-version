@@ -78,9 +78,7 @@ class FastAPIVersioningMiddleware:
                 )
                 break
 
-            scope["version"] = tuple(
-                int(version_part) for version_part in version.split(".")
-            )
+            scope["version"] = tuple(int(version_part) for version_part in version.split("."))
             break
         if error_response:
             return await error_response(scope, receive, send)

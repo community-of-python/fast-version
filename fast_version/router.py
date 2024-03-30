@@ -51,9 +51,7 @@ class VersionedAPIRouter(APIRouter):
                 @ClassProperty
                 def media_type(self) -> str:  # type: ignore[override]
                     """Media type for docs."""
-                    return (
-                        f"{VersionedAPIRouter.VENDOR_MEDIA_TYPE}; version={version_str}"
-                    )
+                    return f"{VersionedAPIRouter.VENDOR_MEDIA_TYPE}; version={version_str}"
 
             kwargs["response_class"] = VersionedJSONResponse
             kwargs["route_class_override"] = VersionedAPIRoute

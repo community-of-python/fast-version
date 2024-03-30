@@ -134,13 +134,8 @@ async def test_openapi_schema(test_client: TestClient) -> None:
     paths: dict[str, typing.Any] = response.json()["paths"]
     assert len(paths) == amount_of_versions
     assert set(paths["/test/"].keys()) == {"get", "post"}
-    assert (
-        len(paths["/test/"]["get"]["responses"]["200"]["content"]) == amount_of_versions
-    )
-    assert (
-        len(paths["/test/"]["post"]["responses"]["200"]["content"])
-        == amount_of_versions
-    )
+    assert len(paths["/test/"]["get"]["responses"]["200"]["content"]) == amount_of_versions
+    assert len(paths["/test/"]["post"]["responses"]["200"]["content"]) == amount_of_versions
     assert len(paths["/test/"]["post"]["requestBody"]["content"]) == amount_of_versions
 
     response = test_client.get("/openapi.json")
