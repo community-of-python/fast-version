@@ -96,7 +96,7 @@ def _custom_openapi(self: fastapi.FastAPI) -> dict[str, typing.Any]:
             continue
 
         # trick to avoid merging routes
-        route_copy: VersionedAPIRoute = copy.copy(route_item)
+        route_copy = copy.copy(route_item)
         route_copy.path_format = f"{route_copy.path_format}:{route_copy.version_str}"
         routes.append(route_copy)
 
