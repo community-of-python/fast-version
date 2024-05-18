@@ -1,5 +1,12 @@
 FastAPI versioning library
 ==
+[![PyPI version](https://badge.fury.io/py/fast-version.svg)](https://pypi.python.org/pypi/fast-version)
+[![Supported versions](https://img.shields.io/pypi/pyversions/fast-version.svg)](https://pypi.python.org/pypi/fast-version)
+[![downloads](https://img.shields.io/pypi/dm/fast-version.svg)](https://pypistats.org/packages/fast-version)
+[![GitHub license](https://img.shields.io/github/license/modern-python/fast-version)](https://github.com/modern-python/fast-version/blob/main/LICENSE)
+[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/modern-python/fast-version/python-package.yml)](https://github.com/modern-python/fast-version/actions)
+[![GitHub stars](https://img.shields.io/github/stars/modern-python/fast-version)](https://github.com/modern-python/fast-version/stargazers)
+
 This package adds versioning by Accept-header into FastAPI
 
 ## Quickstart:
