@@ -4,7 +4,6 @@ version = "1.2.0"
 description = "Fastapi versioning package with accept header"
 authors = ["Artur Shiriev <me@shiriev.ru>"]
 readme = "README.md"
-classifiers = ["Programming Language :: Python :: 3.11", "Framework :: Pytest"]
 homepage = "https://github.com/modern-python/fast-version"
 packages = [
     { include = "fast_version" },
