@@ -7,6 +7,8 @@ FastAPI versioning library
 [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/modern-python/fast-version/python-package.yml)](https://github.com/modern-python/fast-version/actions)
 [![GitHub stars](https://img.shields.io/github/stars/modern-python/fast-version)](https://github.com/modern-python/fast-version/stargazers)
 
+<img src="./logo.svg" width="250" />
+
 This package adds versioning by Accept-header into FastAPI
 
 ## Quickstart:
