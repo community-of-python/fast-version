@@ -30,22 +30,6 @@ tasks:
     cmds:
       - uv run pytest {{.CLI_ARGS}}
 
-  release:
-    desc: "bump version, create tag and release, publish to PYPI"
-    cmds:
-      - git checkout main
-      - git pull
-      - rm -rf ./dist
-      - git add pyproject.toml
-      - git commit -m "bump version to {{.CLI_ARGS}}"
-      - uvx --from build pyproject-build --installer uv
-      - twine upload dist/*
-      - git tag {{.CLI_ARGS}}
-      - git push
-      - git push --tags
-      - gh release create --generate-notes {{.CLI_ARGS}}
-      - gh release upload {{.CLI_ARGS}} ./dist/*
-
   publish:
     cmds:
       - rm -rf dist/*
