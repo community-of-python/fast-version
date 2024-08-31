@@ -122,33 +122,33 @@ wheels = [
 
 [[package]]
 name = "fast-version"
-version = "1.2.0"
+version = "1.3.1.dev3+g3f1ac50.d20240831"
 source = { editable = "." }
 dependencies = [
     { name = "fastapi" },
 ]
 
-[package.optional-dependencies]
-lint = [
-    { name = "mypy" },
-    { name = "ruff" },
-]
-test = [
+[package.dev-dependencies]
+dev = [
     { name = "httpx" },
+    { name = "mypy" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
+    { name = "ruff" },
 ]
 
 [package.metadata]
-requires-dist = [
-    { name = "fastapi", specifier = ">=0.100" },
-    { name = "httpx", marker = "extra == 'test'" },
-    { name = "mypy", marker = "extra == 'lint'" },
-    { name = "pytest", marker = "extra == 'test'" },
-    { name = "pytest-asyncio", marker = "extra == 'test'" },
-    { name = "pytest-cov", marker = "extra == 'test'" },
-    { name = "ruff", marker = "extra == 'lint'" },
+requires-dist = [{ name = "fastapi", specifier = ">=0.100" }]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "httpx" },
+    { name = "mypy" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "ruff" },
 ]
 
 [[package]]
