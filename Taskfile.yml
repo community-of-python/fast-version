@@ -45,3 +45,10 @@ tasks:
       - git push --tags
       - gh release create --generate-notes {{.CLI_ARGS}}
       - gh release upload {{.CLI_ARGS}} ./dist/*
+
+  publish:
+    cmds:
+      - rm -rf dist/*
+      - uvx --from build pyproject-build --installer uv
+      - uv tool run twine check dist/*
+      - uv tool run twine upload dist/* --username __token__ --password $PYPI_TOKEN
