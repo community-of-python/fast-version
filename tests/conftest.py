@@ -58,7 +58,7 @@ async def route_post_v1_1(_: Body2) -> dict[str, typing.Any]:
     return {"version": (1, 1)}
 
 
-@pytest.fixture()
+@pytest.fixture
 def test_client() -> TestClient:
     app: typing.Final = fastapi.FastAPI(docs_url=DOCS_URL_PREFIX)
     init_fastapi_versioning(app=app, vendor_media_type=VERSION_HEADER)

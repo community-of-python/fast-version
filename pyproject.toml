@@ -1,33 +1,41 @@
-[tool.poetry]
+[project]
 name = "fast-version"
 version = "1.2.0"
 description = "Fastapi versioning package with accept header"
-authors = ["Artur Shiriev <me@shiriev.ru>"]
+authors = [
+    { email = "me@shiriev.ru" },
+    { name = "Artur Shiriev"}
+]
 readme = "README.md"
+requires-python = ">=3.10,<4"
 homepage = "https://github.com/modern-python/fast-version"
+license = "MIT"
+dependencies = [
+    "fastapi>=0.100",
+]
 packages = [
     { include = "fast_version" },
 ]
 
-[tool.poetry.dependencies]
-python = ">=3.10,<4"
-fastapi = ">=0.100"
-
-[tool.poetry.dev-dependencies]
-pytest = "*"
-pytest-asyncio = "*"
-pytest-cov = "*"
-httpx = "*"
-ruff = "*"
-mypy = "*"
+[project.optional-dependencies]
+test = [
+    "httpx",
+    "pytest",
+    "pytest-cov",
+    "pytest-asyncio",
+]
+lint = [
+    "ruff",
+    "mypy",
+]
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.10"
 strict = true
 
 [tool.ruff]
 line-length = 120
-target-version = "py311"
+target-version = "py310"
 
 [tool.ruff.lint]
 select = ["ALL"]
@@ -48,7 +56,8 @@ isort.no-lines-before = ["standard-library", "local-folder"]
 [tool.pytest.ini_options]
 addopts = "--cov=. --cov-report term-missing"
 asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"

@@ -1,29 +1,34 @@
 version: "3"
 
 tasks:
+  lock:
+    desc: "lock with update"
+    cmds:
+      - uv lock --upgrade
+
   install:
     desc: "install local dependencies"
     cmds:
-      - poetry install --sync --no-root --all-extras
+      - uv sync --all-extras --frozen
 
   lint:
     desc: "run linters"
     cmds:
-      - poetry run ruff format .
-      - poetry run ruff check . --fix
-      - poetry run mypy .
+      - uv run ruff format .
+      - uv run ruff check . --fix
+      - uv run mypy .
 
   lint-ci:
     desc: "run linters"
     cmds:
-      - poetry run ruff format . --check
-      - poetry run ruff check . --no-fix
-      - poetry run mypy .
+      - uv run ruff format . --check
+      - uv run ruff check . --no-fix
+      - uv run mypy .
 
   tests:
     desc: "run pytest (pass args after '--')"
     cmds:
-      - poetry run pytest {{.CLI_ARGS}}
+      - uv run pytest {{.CLI_ARGS}}
 
   release:
     desc: "bump version, create tag and release, publish to PYPI"
@@ -34,7 +39,7 @@ tasks:
       - poetry version {{.CLI_ARGS}}
       - git add pyproject.toml
       - git commit -m "bump version to {{.CLI_ARGS}}"
-      - poetry build
+      - uvx --from build pyproject-build --installer uv
       - twine upload dist/*
       - git tag {{.CLI_ARGS}}
       - git push
