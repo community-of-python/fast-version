@@ -9,10 +9,11 @@ requires-python = ">=3.10,<4"
 license = "MIT"
 keywords = ["fastapi", "versioning", "accept-header"]
 classifiers = [
-    "Development Status :: 4 - Beta",
-    "Natural Language :: English",
-    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Typing :: Typed",
+    "Topic :: Software Development :: Libraries",
 ]
 dynamic = ["version"]
 dependencies = [
