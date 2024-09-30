@@ -18,7 +18,6 @@ test *args:
     uv run pytest {{ args }}
 
 publish:
-    rm -rf dist/*
-    uv tool run --from build python -m build --installer uv
-    uv tool run twine check dist/*
-    uv tool run twine upload dist/* --username __token__ --password $PYPI_TOKEN
+    rm -rf dist
+    uv build
+    uv publish --token $PYPI_TOKEN

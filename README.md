@@ -4,7 +4,7 @@ FastAPI versioning library
 [![MyPy Strict](https://img.shields.io/badge/mypy-strict-blue)](https://mypy.readthedocs.io/en/stable/getting_started.html#strict-mode-and-configuration)
 [![Supported versions](https://img.shields.io/pypi/pyversions/fast-version.svg)](https://pypi.python.org/pypi/fast-version)
 [![downloads](https://img.shields.io/pypi/dm/fast-version.svg)](https://pypistats.org/packages/fast-version)
-[![GitHub stars](https://img.shields.io/github/stars/modern-python/fast-version)](https://github.com/modern-python/fast-version/stargazers)
+[![GitHub stars](https://img.shields.io/github/stars/community-of-python/fast-version)](https://github.com/community-of-python/fast-version/stargazers)
 
 <img src="./logo.svg" width="250" />
 
