@@ -58,11 +58,12 @@ ignore = [
     "S101", # allow asserts
     "TCH", # ignore flake8-type-checking
     "FBT", # allow boolean args
-    "ANN101", # missing-type-self
     "D203", # "one-blank-line-before-class" conflicting with D211
     "D213", # "multi-line-summary-second-line" conflicting with D212
     "COM812", # flake8-commas "Trailing comma missing"
     "ISC001", # flake8-implicit-str-concat
+    "SIM118", # allow `key in dict.keys()`
+    "PLC0206", # Extracting value from dictionary without calling `.items()`
 ]
 isort.lines-after-imports = 2
 isort.no-lines-before = ["standard-library", "local-folder"]

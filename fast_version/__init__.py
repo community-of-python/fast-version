@@ -3,6 +3,6 @@ from fast_version.router import VersionedAPIRouter
 
 
 __all__ = [
-    "init_fastapi_versioning",
     "VersionedAPIRouter",
+    "init_fastapi_versioning",
 ]

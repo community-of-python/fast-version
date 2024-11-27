@@ -4,7 +4,7 @@ from starlette import datastructures, types
 
 
 def dict_merge(dict1: dict[str, typing.Any], dict2: dict[str, typing.Any]) -> None:
-    for key in dict2:
+    for key in dict2.keys():
         if key in dict1:
             if isinstance(dict1[key], dict) and isinstance(dict2[key], dict):
                 dict_merge(dict1[key], dict2[key])
