@@ -62,8 +62,8 @@ ignore = [
     "D213", # "multi-line-summary-second-line" conflicting with D212
     "COM812", # flake8-commas "Trailing comma missing"
     "ISC001", # flake8-implicit-str-concat
-    "SIM118", # allow `key in dict.keys()`
-    "PLC0206", # Extracting value from dictionary without calling `.items()`
+    "SIM118", # conflicting with PLC0206
+    "PLC0206", # conflicting with SIM118
 ]
 isort.lines-after-imports = 2
 isort.no-lines-before = ["standard-library", "local-folder"]
