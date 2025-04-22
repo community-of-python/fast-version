@@ -73,13 +73,13 @@ async def test_simple_router(test_client: TestClient) -> None:
         assert text == "Hello, world!"
 
 
-async def test_bad_accept_header(test_client: TestClient) -> None:
+async def test_bad_accept_header_default_response(test_client: TestClient) -> None:
     response = test_client.get(
         "/test/",
         headers={"Accept": "application/vnd.wrong+json; version=1.0"},
     )
-    assert response.status_code == status.HTTP_406_NOT_ACCEPTABLE
-    assert response.json() == {"detail": "Wrong media type"}
+    assert response.status_code == status.HTTP_200_OK
+    assert response.headers["content-type"] == f"{VERSION_HEADER}; version=1.0"
 
 
 async def test_no_version(test_client: TestClient) -> None:

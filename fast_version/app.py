@@ -53,10 +53,6 @@ class FastAPIVersioningMiddleware:
                 break
 
             if media_type.strip() != _get_vendor_media_type():
-                error_response = JSONResponse(
-                    {"detail": "Wrong media type"},
-                    status_code=406,
-                )
                 break
 
             version = ""
