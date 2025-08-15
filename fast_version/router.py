@@ -49,7 +49,7 @@ class VersionedAPIRouter(APIRouter):
 
             class VersionedJSONResponse(JSONResponse):
                 @ClassProperty
-                def media_type(self) -> str:  # type: ignore[override]
+                def media_type(self) -> str:
                     """Media type for docs."""
                     return f"{VersionedAPIRouter.VENDOR_MEDIA_TYPE}; version={version_str}"
 

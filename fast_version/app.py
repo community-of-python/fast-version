@@ -22,7 +22,7 @@ def _get_vendor_media_type() -> str:
 
 def init_fastapi_versioning(*, app: fastapi.FastAPI, vendor_media_type: str) -> None:
     VersionedAPIRouter.VENDOR_MEDIA_TYPE = vendor_media_type
-    app.add_middleware(FastAPIVersioningMiddleware)
+    app.add_middleware(FastAPIVersioningMiddleware)  # type: ignore[arg-type]
     app.openapi = MethodType(_custom_openapi, app)  # type: ignore[method-assign]
 
 
