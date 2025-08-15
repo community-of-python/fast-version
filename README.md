@@ -54,6 +54,6 @@ curl -X 'GET' 'https://test.ru/test/' -H 'accept: application/vnd.some.name+json
 
 curl -X 'GET' 'https://test.ru/test/'
 
-# call 2.0 version
-curl -X 'GET' 'https://test.ru/test/' -H 'accept: application/vnd.some.name+json; version=2.0'
+# call 2.1 version
+curl -X 'GET' 'https://test.ru/test/' -H 'accept: application/vnd.some.name+json; version=2.1'
 ```
