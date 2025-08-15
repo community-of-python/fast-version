@@ -16,7 +16,7 @@ classifiers = [
     "Typing :: Typed",
     "Topic :: Software Development :: Libraries",
 ]
-dynamic = ["version"]
+version = "0"
 dependencies = [
     "fastapi>=0.100",
 ]
@@ -38,11 +38,12 @@ dev-dependencies = [
 ]
 
 [build-system]
-requires = ["hatchling", "hatch-vcs"]
-build-backend = "hatchling.build"
+requires = ["uv_build"]
+build-backend = "uv_build"
 
-[tool.hatch.version]
-source = "vcs"
+[tool.uv.build-backend]
+module-name = "fast_version"
+module-root = ""
 
 [tool.mypy]
 python_version = "3.10"
