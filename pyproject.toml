@@ -26,14 +26,16 @@ packages = [
 ]
 
 [project.urls]
-repository = "https://github.com/modern-python/fast-version"
+repository = "https://github.com/community-of-python/fast-version"
 
-[tool.uv]
-dev-dependencies = [
+[dependency-groups]
+dev = [
     "httpx",
     "pytest",
     "pytest-cov",
     "pytest-asyncio",
+]
+lint = [
     "ruff",
     "mypy",
 ]
