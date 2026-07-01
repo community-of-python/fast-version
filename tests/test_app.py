@@ -1,10 +1,15 @@
 import typing
 
+import fastapi
+import pydantic
 import pytest
 from starlette import status
 from starlette.testclient import TestClient
 
-from tests.conftest import DOCS_URL_PREFIX, VERSION_HEADER
+from fast_version import init_fastapi_versioning
+from fast_version.app import _iter_openapi_routes
+from fast_version.router import VersionedAPIRoute, VersionedAPIRouter
+from tests.conftest import DOCS_URL_PREFIX, VERSION_HEADER, VERSIONED_ROUTER_OBJ
 
 
 pytestmark = [pytest.mark.asyncio]
@@ -140,3 +145,64 @@ async def test_openapi_schema(test_client: TestClient) -> None:
 
     response = test_client.get("/openapi.json")
     assert response.status_code == status.HTTP_200_OK
+
+
+async def test_iter_openapi_routes_finds_prefixed_versioned_paths() -> None:
+    app = fastapi.FastAPI()
+    init_fastapi_versioning(app=app, vendor_media_type=VERSION_HEADER)
+    app.include_router(VERSIONED_ROUTER_OBJ, prefix="/api")
+
+    routes = _iter_openapi_routes(app)
+
+    versioned_paths = {route.path_format for route in routes if isinstance(route, VersionedAPIRoute)}
+    assert versioned_paths == {"/api/test/:1.0", "/api/test/:2.0", "/api/test/:1.1"}
+
+
+async def test_openapi_schema_with_prefix() -> None:
+    amount_of_versions: typing.Final = 2
+
+    app = fastapi.FastAPI()
+    init_fastapi_versioning(app=app, vendor_media_type=VERSION_HEADER)
+    app.include_router(VERSIONED_ROUTER_OBJ, prefix="/api")
+    client = TestClient(app=app)
+
+    response = client.get("/openapi.json")
+    assert response.status_code == status.HTTP_200_OK
+    paths: dict[str, typing.Any] = response.json()["paths"]
+    assert "/api/test/" in paths
+    assert len(paths["/api/test/"]["get"]["responses"]["200"]["content"]) == amount_of_versions
+    assert len(paths["/api/test/"]["post"]["responses"]["200"]["content"]) == amount_of_versions
+    assert len(paths["/api/test/"]["post"]["requestBody"]["content"]) == amount_of_versions
+
+
+async def test_openapi_schema_distinct_models_with_shared_name_across_versions() -> None:
+    # Two different models sharing a class name (as if defined in separate v1/v2 modules).
+    # A single get_openapi call must disambiguate them; a per-version merge would collapse
+    # both request bodies onto one component schema and silently corrupt v1.0.
+    item_v1 = pydantic.create_model("Item", name=(str, ...))
+    item_v2 = pydantic.create_model("Item", name=(str, ...), price=(float, ...))
+    router = VersionedAPIRouter()
+
+    @router.post("/thing/")
+    async def _create(_: item_v1) -> dict[str, typing.Any]:  # type: ignore[valid-type]
+        return {}
+
+    @router.post("/thing/")
+    @router.set_api_version((2, 0))
+    async def _create_v2(_: item_v2) -> dict[str, typing.Any]:  # type: ignore[valid-type]
+        return {}
+
+    app = fastapi.FastAPI()
+    init_fastapi_versioning(app=app, vendor_media_type=VERSION_HEADER)
+    app.include_router(router)
+    client = TestClient(app=app)
+
+    schema = client.get("/openapi.json").json()
+    content = schema["paths"]["/thing/"]["post"]["requestBody"]["content"]
+    v1_ref = content[f"{VERSION_HEADER}; version=1.0"]["schema"]["$ref"]
+    v2_ref = content[f"{VERSION_HEADER}; version=2.0"]["schema"]["$ref"]
+    assert v1_ref != v2_ref
+
+    schemas = schema["components"]["schemas"]
+    assert set(schemas[v1_ref.rsplit("/", 1)[-1]]["properties"]) == {"name"}
+    assert set(schemas[v2_ref.rsplit("/", 1)[-1]]["properties"]) == {"name", "price"}
