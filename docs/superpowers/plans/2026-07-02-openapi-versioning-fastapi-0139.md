@@ -41,175 +41,32 @@ schema per version. This is the core fix.
 - Modify: `fast_version/app.py` (imports; add `_collect_route_contexts`; rewrite `_custom_openapi`)
 - Test: `tests/test_app.py` (add helper test + prefixed-router integration test; existing `test_openapi_schema` already covers the no-prefix case)
 
-**Interfaces:**
-- Produces: `_collect_route_contexts(app: fastapi.FastAPI) -> tuple[list[RouteContext], dict[tuple[int, int], list[RouteContext]]]` — returns `(non_versioned_contexts, versioned_contexts_by_version)`. `RouteContext` is `fastapi.routing.RouteContext`.
-- Produces: `_custom_openapi(self: fastapi.FastAPI) -> dict[str, typing.Any]` — unchanged signature; still bound onto `app.openapi` by `init_fastapi_versioning`.
-- Consumes: `helpers.dict_merge` (existing), `VersionedAPIRoute.version` (existing property returning `tuple[int, int]`).
+> **SUPERSEDED — implemented as Option A (single-call).** The step-by-step
+> per-version implementation originally drafted here was rejected during review: one
+> `get_openapi` call per version prevents FastAPI from disambiguating
+> same-named-but-different Pydantic models across versions, silently corrupting such
+> schemas. The shipped implementation (single `get_openapi` call over a flat route
+> list with `:<version>`-suffixed paths) is described below and lives in commits
+> `6d5f68e` (core fix) and `7c2598a` (exact-path-match robustness). See the updated
+> spec for the full rationale.
 
-- [ ] **Step 1: Add the failing tests**
+**Files (as shipped):**
+- Modify: `fast_version/app.py` (imports add `copy`, `fastapi.routing.{RouteContext, iter_route_contexts}`, `starlette.routing.BaseRoute`; add `_iter_openapi_routes`; rewrite `_custom_openapi`).
+- Test: `tests/test_app.py` (four new tests, see below).
 
-Add these imports at the top of `tests/test_app.py` (below the existing imports):
+**Interfaces (as shipped):**
+- `_iter_openapi_routes(app: fastapi.FastAPI) -> tuple[list[BaseRoute | RouteContext], set[str]]` — returns `(routes, versioned_suffixed_paths)`. Non-versioned routes pass through as `RouteContext`; each versioned route is a `copy.copy` with `path_format` set to `f"{route_context.path_format}:{original_route.version_str}"`. The returned set holds those suffixed paths for exact-match identification during post-processing.
+- `_custom_openapi(self: fastapi.FastAPI) -> dict[str, typing.Any]` — unchanged signature; still bound onto `app.openapi` by `init_fastapi_versioning`. Makes ONE `get_openapi` call over `_iter_openapi_routes(self)[0]`, then for each generated path in the versioned-paths set: `rsplit(":", 1)` into `clean_path` + `version_str`, rewrite `requestBody.content` keys to `<vendor>; version=X.Y`, and merge onto `clean_path` (first occurrence direct, later via `helpers.dict_merge`). Non-versioned paths pass through untouched. Caches on `self.openapi_schema`.
+- Consumes: `helpers.dict_merge`, `VersionedAPIRoute.version`/`version_str` (both stay).
 
-```python
-import fastapi
+**Tests (as shipped):**
+- Existing `test_openapi_schema` (no-prefix, both versions in get/post response + post requestBody) — still passes.
+- `test_iter_openapi_routes_finds_prefixed_versioned_paths` — with `prefix="/api"`, the returned set and the copies' `path_format`s are `{"/api/test/:1.0", "/api/test/:2.0", "/api/test/:1.1"}`.
+- `test_openapi_schema_with_prefix` — prefixed router exposes both versions at `/api/test/`.
+- `test_openapi_schema_distinct_models_with_shared_name_across_versions` — regression guard for the single-call requirement (distinct `$ref`s + correct per-version properties for two same-named models).
+- `test_openapi_schema_preserves_non_versioned_path_with_colon` — a non-versioned `/resource:activate` keeps its `application/json` body (colon not mistaken for a version suffix).
 
-from fast_version import init_fastapi_versioning
-from fast_version.app import _collect_route_contexts
-from tests.conftest import VERSIONED_ROUTER_OBJ
-```
-
-Append these two tests to `tests/test_app.py`:
-
-```python
-async def test_collect_route_contexts_finds_versioned_routes_behind_prefix() -> None:
-    app = fastapi.FastAPI()
-    init_fastapi_versioning(app=app, vendor_media_type=VERSION_HEADER)
-    app.include_router(VERSIONED_ROUTER_OBJ, prefix="/api")
-
-    _, versioned = _collect_route_contexts(app)
-
-    assert set(versioned.keys()) == {(1, 0), (2, 0), (1, 1)}
-
-
-async def test_openapi_schema_with_prefix() -> None:
-    amount_of_versions: typing.Final = 2
-
-    app = fastapi.FastAPI()
-    init_fastapi_versioning(app=app, vendor_media_type=VERSION_HEADER)
-    app.include_router(VERSIONED_ROUTER_OBJ, prefix="/api")
-    client = TestClient(app=app)
-
-    response = client.get("/openapi.json")
-    assert response.status_code == status.HTTP_200_OK
-    paths: dict[str, typing.Any] = response.json()["paths"]
-    assert "/api/test/" in paths
-    assert len(paths["/api/test/"]["get"]["responses"]["200"]["content"]) == amount_of_versions
-    assert len(paths["/api/test/"]["post"]["responses"]["200"]["content"]) == amount_of_versions
-    assert len(paths["/api/test/"]["post"]["requestBody"]["content"]) == amount_of_versions
-```
-
-- [ ] **Step 2: Run the new + existing OpenAPI tests to confirm they fail**
-
-Run: `uv run pytest tests/test_app.py -k "openapi or collect_route_contexts" -v`
-Expected: `test_collect_route_contexts_finds_versioned_routes_behind_prefix` FAILS with `ImportError`/`AttributeError` (`_collect_route_contexts` does not exist yet); `test_openapi_schema` and `test_openapi_schema_with_prefix` FAIL on the content-length assertions (`assert 1 == 2`) because versions collapse under FastAPI 0.139.
-
-- [ ] **Step 3: Update imports in `fast_version/app.py`**
-
-Replace the current import block. Remove the now-unused `copy` import and the `starlette.responses.JSONResponse` import is still needed by the middleware — keep it. Add the `fastapi.routing` imports. The full import block becomes:
-
-```python
-import contextlib
-import re
-import typing
-from types import MethodType
-
-import fastapi
-from fastapi.openapi.utils import get_openapi
-from fastapi.routing import RouteContext, iter_route_contexts
-from starlette import types
-from starlette.responses import JSONResponse
-
-from fast_version import helpers
-from fast_version.router import VersionedAPIRoute, VersionedAPIRouter
-```
-
-(Versus the original imports, this drops `import copy` — the old hack used `copy.copy` — and adds the `fastapi.routing` line. After the rewrite, verify `copy` no longer appears anywhere in `app.py`.)
-
-- [ ] **Step 4: Add the `_collect_route_contexts` helper**
-
-Insert this function into `fast_version/app.py` immediately above `_custom_openapi`:
-
-```python
-def _collect_route_contexts(
-    app: fastapi.FastAPI,
-) -> tuple[list[RouteContext], dict[tuple[int, int], list[RouteContext]]]:
-    """Split app routes into non-versioned contexts and versioned contexts grouped by version.
-
-    Traverses nested routers (FastAPI wraps included routers in an opaque object), so
-    routes added via ``app.include_router`` are found and keep their effective paths.
-    """
-    non_versioned: list[RouteContext] = []
-    versioned: dict[tuple[int, int], list[RouteContext]] = {}
-    for route_context in iter_route_contexts(app.routes):
-        original_route = route_context.original_route
-        if isinstance(original_route, VersionedAPIRoute):
-            versioned.setdefault(original_route.version, []).append(route_context)
-        else:
-            non_versioned.append(route_context)
-    return non_versioned, versioned
-```
-
-- [ ] **Step 5: Rewrite `_custom_openapi`**
-
-Replace the entire existing `_custom_openapi` function body with:
-
-```python
-def _custom_openapi(self: fastapi.FastAPI) -> dict[str, typing.Any]:
-    if self.openapi_schema:
-        return self.openapi_schema
-
-    non_versioned, versioned = _collect_route_contexts(self)
-
-    def build(routes: list[RouteContext]) -> dict[str, typing.Any]:
-        return get_openapi(
-            title=self.title,
-            version=self.version,
-            openapi_version=self.openapi_version,
-            summary=self.summary,
-            description=self.description,
-            terms_of_service=self.terms_of_service,
-            contact=self.contact,
-            license_info=self.license_info,
-            routes=routes,
-            webhooks=self.webhooks.routes,
-            tags=self.openapi_tags,
-            servers=self.servers,
-        )
-
-    schema = build(non_versioned)
-    vendor_media_type = _get_vendor_media_type()
-    for version, route_contexts in versioned.items():
-        version_str = ".".join(str(part) for part in version)
-        version_schema = build(route_contexts)
-        for methods in version_schema["paths"].values():
-            for payload in methods.values():
-                if "requestBody" not in payload:
-                    continue
-                payload["requestBody"]["content"] = {
-                    f"{vendor_media_type}; version={version_str}": content
-                    for content in payload["requestBody"]["content"].values()
-                }
-        helpers.dict_merge(schema, version_schema)
-
-    self.openapi_schema = schema
-    return self.openapi_schema
-```
-
-Rationale for each piece:
-- Response `content` keys are already correct per version because `VersionedJSONResponse.media_type` bakes in `; version=X.Y`; only `requestBody` content (default `application/json`) needs rewriting, and it is rewritten only inside per-version schemas (never on the non-versioned base), so non-versioned request bodies are untouched.
-- `helpers.dict_merge` merges paths and components across versions; shared model schemas with identical content merge cleanly.
-- Caching on `self.openapi_schema` preserves the second-call behavior asserted by `test_openapi_schema`.
-
-- [ ] **Step 6: Run the full test suite**
-
-Run: `uv run pytest -q`
-Expected: PASS, `18 passed` (16 existing + 2 new). Coverage on `fast_version/app.py` should be 100%.
-
-- [ ] **Step 7: Run linters**
-
-Run: `uv run ruff format fast_version/app.py tests/test_app.py --check && uv run ruff check fast_version tests --no-fix && uv run mypy .`
-Expected: all pass, `Success: no issues found`. If `ruff format --check` reports a diff, run `uv run ruff format .` and re-run.
-
-- [ ] **Step 8: Commit**
-
-```bash
-git add fast_version/app.py tests/test_app.py
-git commit -m "fix: rebuild OpenAPI schema per version for FastAPI 0.139+
-
-include_router now hides routes in an opaque _IncludedRouter and get_openapi
-ignores mutated path_format, collapsing same-path versioned routes. Enumerate
-routes via iter_route_contexts and build one schema per version, then merge."
-```
+**TDD note:** the existing `test_openapi_schema` was already RED under FastAPI 0.139; the model and colon regression tests were confirmed RED against the pre-fix code before implementing. Final state: 20 passed, ruff/mypy strict clean, 100% coverage on `app.py` and `router.py`.
 
 ---
 
