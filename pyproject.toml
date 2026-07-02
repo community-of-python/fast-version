@@ -1,14 +1,16 @@
 [project]
 name = "fast-version"
-description = "Fastapi versioning package with accept header"
+description = "Versioning APIs in FastAPI by Accept-header"
 authors = [
     { name = "Artur Shiriev", email = "me@shiriev.ru" },
 ]
 readme = "README.md"
 requires-python = ">=3.10,<4"
 license = "MIT"
-keywords = ["fastapi", "versioning", "accept-header"]
+keywords = ["accept-header", "api-versioning", "fastapi", "openapi", "python", "rest", "versioning"]
 classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -21,12 +23,12 @@ version = "0"
 dependencies = [
     "fastapi>=0.100",
 ]
-packages = [
-    { include = "fast_version" },
-]
 
 [project.urls]
-repository = "https://github.com/community-of-python/fast-version"
+Homepage = "https://github.com/community-of-python/fast-version"
+Repository = "https://github.com/community-of-python/fast-version"
+Issues = "https://github.com/community-of-python/fast-version/issues"
+Changelog = "https://github.com/community-of-python/fast-version/releases"
 
 [dependency-groups]
 dev = [
