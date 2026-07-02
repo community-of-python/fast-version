@@ -1,14 +1,14 @@
 ---
-summary: Fresh-adopt the lesnik512/planning-convention (v1.1.1) and unify the superpowers spec/plan flow onto planning/changes/.
+summary: Fresh-adopt the lesnik512/planning-convention (v1.1.2) and unify the superpowers spec/plan flow onto planning/changes/.
 ---
 
-# Design: Adopt the planning-convention (fresh adopt, v1.1.1)
+# Design: Adopt the planning-convention (fresh adopt, v1.1.2)
 
 ## Summary
 
 Apply the portable planning convention from
 [`lesnik512/planning-convention`](https://github.com/lesnik512/planning-convention)
-to fast-version as a **fresh adopt** at version **1.1.1**, following that repo's
+to fast-version as a **fresh adopt** at version **1.1.2**, following that repo's
 `APPLY.md` §§1–6. The convention installs a two-axis model — `architecture/`
 (repo root; the living truth of what the system does now) and
 `planning/changes/` (dated change bundles: the history) — plus a stdlib
@@ -68,7 +68,7 @@ Copied exactly from the canonical repo, local edits intentionally discarded:
 
 ### 3. Version record
 
-- `planning/.convention-version` → `1.1.1` (the latest CHANGELOG version).
+- `planning/.convention-version` → `1.1.2` (the latest CHANGELOG version).
 
 ### 4. Judgment-merged files (edit in place, preserve existing content)
 
