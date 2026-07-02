@@ -30,7 +30,7 @@ repository = "https://github.com/community-of-python/fast-version"
 
 [dependency-groups]
 dev = [
-    "httpx",
+    "httpx2",
     "pytest",
     "pytest-cov",
     "pytest-asyncio",
