@@ -43,7 +43,7 @@ lint = [
 ]
 
 [build-system]
-requires = ["uv_build"]
+requires = ["uv_build>=0.11,<1.0"]
 build-backend = "uv_build"
 
 [tool.uv.build-backend]
@@ -51,8 +51,13 @@ module-name = "fast_version"
 module-root = ""
 
 [tool.ruff]
+fix = false
+unsafe-fixes = true
 line-length = 120
 target-version = "py310"
+
+[tool.ruff.format]
+docstring-code-format = true
 
 [tool.ruff.lint]
 select = ["ALL"]
@@ -72,6 +77,11 @@ isort.lines-after-imports = 2
 isort.no-lines-before = ["standard-library", "local-folder"]
 
 [tool.pytest.ini_options]
-addopts = "--cov=. --cov-report term-missing"
+addopts = ""
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
+
+[tool.coverage.report]
+exclude_also = [
+    "if typing.TYPE_CHECKING:",
+]
