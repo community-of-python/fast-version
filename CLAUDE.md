@@ -16,10 +16,10 @@ Uses `uv` and `just`. `uv.lock` is git-ignored here (see `.gitignore`), so it is
 committed; `just install` regenerates it via `uv lock --upgrade`.
 
 ```bash
-just install    # uv lock --upgrade + uv sync --all-extras --all-groups --frozen
-just lint       # ruff format, ruff check --fix, mypy (mutates files)
-just lint-ci    # same checks, no mutation (--check / --no-fix)
-just test       # uv run pytest (coverage is on by default via addopts)
+just install    # uv lock --upgrade + uv sync --all-extras --frozen --group lint
+just lint       # eof-fixer, ruff format, ruff check --fix, ty check (mutates files)
+just lint-ci    # same checks, no mutation (--check / --no-fix) + planning index check
+just test       # uv run --no-sync pytest; just test-ci adds coverage (--cov-fail-under=100)
 just            # default recipe: install, lint, test
 ```
 
@@ -86,9 +86,11 @@ class-level `VENDOR_MEDIA_TYPE`, adds the middleware, and swaps in `_custom_open
 
 ## Conventions
 
-- Ruff with `select = ["ALL"]` (line length 120), mypy `strict`. Both must pass;
-  CI runs `lint-ci` plus pytest across Python 3.10-3.14 via the shared
-  `community-of-python/community-workflow` reusable workflow.
-- `type: ignore` (not `ty: ignore`) is used here since the type checker is mypy.
+- Ruff with `select = ["ALL"]` (line length 120) and `ty` (defaults). Both must
+  pass; CI runs `lint-ci` plus pytest across Python 3.10-3.14 via the repo's
+  self-hosted GitHub Actions workflows (`ci.yml` -> `_checks.yml`), with
+  tag-driven OIDC publishing (`release.yml`) and a weekly dependency check
+  (`scheduled.yml`).
+- `ty: ignore` (not `type: ignore`) is used here since the type checker is ty.
 - Tests are ASGI integration tests using `starlette.testclient.TestClient`;
   `asyncio_mode = "auto"`. Fixtures/endpoints live in `tests/conftest.py`.

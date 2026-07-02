@@ -1,7 +1,6 @@
 FastAPI versioning library
 ==
-[![Test Coverage](https://codecov.io/gh/community-of-python/fast-version/branch/main/graph/badge.svg)](https://codecov.io/gh/community-of-python/fast-version)
-[![MyPy Strict](https://img.shields.io/badge/mypy-strict-blue)](https://mypy.readthedocs.io/en/stable/getting_started.html#strict-mode-and-configuration)
+[![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen.svg)](https://github.com/community-of-python/fast-version/actions/workflows/ci.yml)
 [![Supported versions](https://img.shields.io/pypi/pyversions/fast-version.svg)](https://pypi.python.org/pypi/fast-version)
 [![downloads](https://img.shields.io/pypi/dm/fast-version.svg)](https://pypistats.org/packages/fast-version)
 [![GitHub stars](https://img.shields.io/github/stars/community-of-python/fast-version)](https://github.com/community-of-python/fast-version/stargazers)

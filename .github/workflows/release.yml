@@ -1,0 +1,60 @@
+name: Release
+
+# Tag-driven: pushing a semver tag publishes to PyPI and creates the matching
+# GitHub Release. The tag is the sole entry point; by convention a tag is only
+# cut off a green main, so there is no in-workflow CI gate.
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'               # stable:      2.7.2
+      - '[0-9]+.[0-9]+.[0-9]+[a-z]+[0-9]+'   # pre-release: 2.0.0rc1, 4.0.0a2
+
+# contents: write -> create the GitHub Release; id-token: write -> OIDC for PyPI Trusted Publishing.
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    environment: pypi  # scopes the PyPI Trusted Publisher; hook for approval rules
+    steps:
+      - uses: actions/checkout@v6
+      - uses: extractions/setup-just@v4
+      - uses: astral-sh/setup-uv@v8.2.0
+
+      # PyPI is irreversible, so it runs FIRST: if it fails the job stops and no
+      # GitHub Release is created advertising a version that never reached PyPI.
+      # `just publish` derives the version from $GITHUB_REF_NAME (the tag name).
+      # Auth via PyPI Trusted Publishing (OIDC); no PYPI_TOKEN. Needs a Trusted
+      # Publisher on the fast-version PyPI project (env: pypi, workflow: release.yml).
+      - run: just publish
+
+      # Description source: planning/releases/<tag>.md if present (verbatim, no
+      # auto-changelog appended); otherwise GitHub's generated notes. A tag with
+      # a letter (2.0.0rc1) is a pre-release -> flagged so GitHub won't mark it
+      # "Latest".
+      - name: Resolve release metadata
+        id: meta
+        run: |
+          set -euo pipefail
+          notes="planning/releases/${GITHUB_REF_NAME}.md"
+          if [ -f "$notes" ]; then
+            echo "body_path=$notes" >> "$GITHUB_OUTPUT"
+            echo "generate_notes=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "generate_notes=true" >> "$GITHUB_OUTPUT"
+          fi
+          if [[ "$GITHUB_REF_NAME" =~ [a-z] ]]; then
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          body_path: ${{ steps.meta.outputs.body_path }}
+          generate_release_notes: ${{ steps.meta.outputs.generate_notes }}
+          prerelease: ${{ steps.meta.outputs.prerelease }}
+          draft: false
