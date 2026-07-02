@@ -14,7 +14,7 @@
 - No changes to `fast_version/` source or `tests/`. No `pyproject.toml` change.
 - `index.py` and `_templates/*` are **copied verbatim** from the canonical repo — never hand-edit them (edits are discarded on the next convention update).
 - Lint must pass `just lint-ci`: `ruff format --check`, `ruff check --no-fix`, `mypy .` (strict), and the new `python planning/index.py --check` step.
-- The only reason `planning/index.py` needs help passing lint is `INP001` (implicit namespace package); the fix is an **empty `planning/__init__.py`**, NOT a ruff-config change and NOT an edit to `index.py`.
+- `planning/index.py` trips `INP001` (implicit namespace package) under `select=["ALL"]`. Per the modern-python convention repos (`../pypi/*`), the fix is a file-level `# ruff: noqa: INP001` header on `index.py` itself and **no `planning/__init__.py`** — NOT a ruff-config change. (An empty `__init__.py` was tried first but makes coverage's `--cov=.` count the vendored validator, dropping coverage to 71%; keeping `planning/` a non-package restores 100%.) Only `INP001` is suppressed; this v1.1.1 `index.py` has a D212-safe docstring, so adding `D212` would trip `RUF100`.
 - Type-checker is **mypy**: suppress with `# type: ignore[...]` (never `# ty: ignore`). Verified: the verbatim `index.py` passes `mypy --strict` and `ruff format --check` as-is.
 - `uv.lock` is git-ignored here — never stage it.
 - Bundle/decision naming is enforced by the validator: bundles `changes/YYYY-MM-DD.NN-slug/`, decisions `decisions/YYYY-MM-DD-slug.md`. `date`/`slug` are derived from the name, never written in frontmatter.
@@ -29,6 +29,8 @@ Already on branch `chore/adopt-planning-convention` (created during brainstormin
 ---
 
 ### Task 1: Install the owned canonical files + package marker
+
+> **Superseded during execution:** Task 1 originally created an empty `planning/__init__.py` to silence `INP001`. That made coverage's `--cov=.` count the vendored validator (100%->71%). The shipped approach (commit after Task 6) instead adds a `# ruff: noqa: INP001` header to `index.py` and removes `planning/__init__.py`, matching the modern-python convention repos — ruff clean, coverage 100%, no pyproject change. Steps below are the original record.
 
 Copy the verbatim-owned files and the version record. The empty `__init__.py` is what keeps the vendored `index.py` from failing `INP001` under fast-version's `select = ["ALL"]` ruff config.
 
@@ -430,7 +432,7 @@ Fresh adopt of lesnik512/planning-convention at **v1.1.1** (APPLY.md §§1-6).
 - This adoption dogfoods the convention: it lives in `planning/changes/2026-07-02.01-adopt-planning-convention/`.
 
 **Deviation from vanilla APPLY**
-- Added an empty `planning/__init__.py` so the verbatim `index.py` passes fast-version's stricter ruff (`select=["ALL"]`, no `INP` ignore). No ruff-config change; `index.py` stays verbatim.
+- `planning/index.py` carries a one-line `# ruff: noqa: INP001` header so it passes fast-version's stricter ruff (`select=["ALL"]`, no `INP` ignore) without a `planning/__init__.py` — matching the modern-python convention repos. Keeping `planning/` a non-package also keeps the vendored validator out of `--cov=.`, so coverage stays 100%. No pyproject changes. Note: canonical `main`'s v1.1.1 `index.py` does not yet ship this header, so a future APPLY re-copy must re-add it.
 
 Verified locally: `just check-planning` → `planning: OK`; `just lint-ci` green; `just test` green.
 EOF
@@ -447,4 +449,4 @@ Expected: the reusable `community-of-python/community-workflow` matrix (Python 3
 ## Notes
 
 - Do not run `just install` as part of this work — it does `uv lock --upgrade` and could pull unrelated dependency bumps into the branch. This adoption adds no dependencies.
-- If a future convention update lands, re-run the canonical `APPLY.md` UPDATE path (applies only CHANGELOG entries newer than the recorded `1.1.1`); it will overwrite `planning/index.py` and `planning/_templates/*` verbatim again — keep the empty `planning/__init__.py`.
+- If a future convention update lands, re-run the canonical `APPLY.md` UPDATE path (applies only CHANGELOG entries newer than the recorded `1.1.1`); it will overwrite `planning/index.py` and `planning/_templates/*` verbatim again — re-add the `# ruff: noqa: INP001` header to `index.py` afterward (canonical `main` does not yet carry it) and do not create a `planning/__init__.py`.
