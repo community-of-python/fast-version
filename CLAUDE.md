@@ -26,7 +26,20 @@ just            # default recipe: install, lint, test
 Run a single test: `just test tests/test_app.py::test_get` or
 `uv run pytest -k test_openapi_schema`.
 
+## Workflow
+
+Planning follows the convention in [`planning/README.md`](planning/README.md) —
+its **Quick path** is authoritative. Pick a lane (Full = `design.md` + `plan.md`,
+Lightweight = `change.md`, Tiny = conventional commit) and create a bundle under
+`planning/changes/YYYY-MM-DD.NN-<slug>/`. In this repo the superpowers
+brainstorming/writing-plans flow writes specs and plans **into that bundle**, not
+into `docs/superpowers/`. Run `just check-planning` before pushing.
+
 ## Architecture
+
+> **Promotion rule:** when a change alters a capability's behavior, update the
+> matching `architecture/<capability>.md` in the same PR (see
+> `architecture/README.md`).
 
 Versioning is implemented across three layers that cooperate through the ASGI
 `scope["version"]` key:
