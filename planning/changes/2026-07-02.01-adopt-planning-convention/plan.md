@@ -1,8 +1,8 @@
-# Adopt planning-convention (v1.1.1) Implementation Plan
+# Adopt planning-convention (v1.1.2) Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Fresh-adopt the `lesnik512/planning-convention` (v1.1.1) into fast-version and unify the superpowers spec/plan flow onto `planning/changes/`.
+**Goal:** Fresh-adopt the `lesnik512/planning-convention` (v1.1.2) into fast-version and unify the superpowers spec/plan flow onto `planning/changes/`.
 
 **Architecture:** Follow the canonical `APPLY.md` §§1-6 for a fresh adopt: copy the owned files (`index.py`, `_templates/*`) verbatim, scaffold `planning/` and `architecture/`, merge the convention prose into `planning/README.md`, and judgment-merge `Justfile` + `CLAUDE.md`. On top of that, migrate the two existing `docs/superpowers/` artifacts into a change bundle and delete that tree. The validator (`planning/index.py`) is stdlib-only and gets wired into `lint-ci`.
 
@@ -10,11 +10,11 @@
 
 ## Global Constraints
 
-- Spec: [`design.md`](./design.md). This is a fresh adopt at convention version **1.1.1**.
+- Spec: [`design.md`](./design.md). This is a fresh adopt at convention version **1.1.2**.
 - No changes to `fast_version/` source or `tests/`. No `pyproject.toml` change.
 - `index.py` and `_templates/*` are **copied verbatim** from the canonical repo — never hand-edit them (edits are discarded on the next convention update).
 - Lint must pass `just lint-ci`: `ruff format --check`, `ruff check --no-fix`, `mypy .` (strict), and the new `python planning/index.py --check` step.
-- `planning/index.py` trips `INP001` (implicit namespace package) under `select=["ALL"]`. Per the modern-python convention repos (`../pypi/*`), the fix is a file-level `# ruff: noqa: INP001` header on `index.py` itself and **no `planning/__init__.py`** — NOT a ruff-config change. (An empty `__init__.py` was tried first but makes coverage's `--cov=.` count the vendored validator, dropping coverage to 71%; keeping `planning/` a non-package restores 100%.) Only `INP001` is suppressed; this v1.1.1 `index.py` has a D212-safe docstring, so adding `D212` would trip `RUF100`.
+- `planning/index.py` would trip `INP001` (implicit namespace package) under `select=["ALL"]`. As of convention **v1.1.2** the canonical `index.py` ships a file-level `# ruff: noqa: INP001` header, so it is copied **verbatim** and passes with **no `planning/__init__.py`** and **no ruff-config change**. Keeping `planning/` a non-package also keeps the vendored validator out of coverage's `--cov=.` (an empty `__init__.py`, tried first, dropped coverage to 71%; the non-package layout restores 100%).
 - Type-checker is **mypy**: suppress with `# type: ignore[...]` (never `# ty: ignore`). Verified: the verbatim `index.py` passes `mypy --strict` and `ruff format --check` as-is.
 - `uv.lock` is git-ignored here — never stage it.
 - Bundle/decision naming is enforced by the validator: bundles `changes/YYYY-MM-DD.NN-slug/`, decisions `decisions/YYYY-MM-DD-slug.md`. `date`/`slug` are derived from the name, never written in frontmatter.
@@ -30,7 +30,7 @@ Already on branch `chore/adopt-planning-convention` (created during brainstormin
 
 ### Task 1: Install the owned canonical files + package marker
 
-> **Superseded during execution:** Task 1 originally created an empty `planning/__init__.py` to silence `INP001`. That made coverage's `--cov=.` count the vendored validator (100%->71%). The shipped approach (commit after Task 6) instead adds a `# ruff: noqa: INP001` header to `index.py` and removes `planning/__init__.py`, matching the modern-python convention repos — ruff clean, coverage 100%, no pyproject change. Steps below are the original record.
+> **Superseded during execution:** Task 1 originally created an empty `planning/__init__.py` to silence `INP001`. That made coverage's `--cov=.` count the vendored validator (100%->71%). The shipped approach (commit after Task 6) instead adds a `# ruff: noqa: INP001` header to `index.py` and removes `planning/__init__.py`, matching the modern-python convention repos — ruff clean, coverage 100%, no pyproject change. This was then upstreamed as convention **v1.1.2**, so `index.py` now carries the header canonically and is copied verbatim (this branch was bumped to 1.1.2). Steps below are the original record.
 
 Copy the verbatim-owned files and the version record. The empty `__init__.py` is what keeps the vendored `index.py` from failing `INP001` under fast-version's `select = ["ALL"]` ruff config.
 
@@ -38,7 +38,7 @@ Copy the verbatim-owned files and the version record. The empty `__init__.py` is
 - Create: `planning/index.py` (verbatim from canonical)
 - Create: `planning/__init__.py` (empty — package marker for lint)
 - Create: `planning/_templates/{change,design,plan,decision,release,glossary}.md` (verbatim)
-- Create: `planning/.convention-version` (contents: `1.1.1`)
+- Create: `planning/.convention-version` (contents: `1.1.2`)
 
 **Interfaces:**
 - Produces: `planning/index.py` runnable as `uv run python planning/index.py [--check]`; resolves `changes/`, `decisions/` relative to its own parent (`planning/`) and tolerates their absence.
@@ -56,7 +56,7 @@ mkdir -p planning/_templates
 cp "$PC/index.py" planning/index.py
 cp "$PC"/_templates/*.md planning/_templates/
 : > planning/__init__.py
-printf '1.1.1\n' > planning/.convention-version
+printf '1.1.2\n' > planning/.convention-version
 ```
 
 - [ ] **Step 3: Verify the copies match canonical (no drift)**
@@ -78,7 +78,7 @@ Expected: `LINT_OK`. (If `INP001` appears, `planning/__init__.py` is missing or 
 
 ```bash
 git add planning/index.py planning/__init__.py planning/_templates planning/.convention-version
-git commit -m "chore(planning): install convention validator + templates (v1.1.1)"
+git commit -m "chore(planning): install convention validator + templates (v1.1.2)"
 ```
 
 ---
@@ -417,11 +417,11 @@ git push -u origin chore/adopt-planning-convention
 - [ ] **Step 2: Open the PR**
 
 ```bash
-gh pr create --title "Adopt planning-convention (fresh adopt v1.1.1)" --body "$(cat <<'EOF'
-Fresh adopt of lesnik512/planning-convention at **v1.1.1** (APPLY.md §§1-6).
+gh pr create --title "Adopt planning-convention (fresh adopt v1.1.2)" --body "$(cat <<'EOF'
+Fresh adopt of lesnik512/planning-convention at **v1.1.2** (APPLY.md §§1-6).
 
 **What landed**
-- `planning/`: verbatim `index.py` + `_templates/*`, `.convention-version` (1.1.1), convention `README.md`, `deferred.md`, `decisions/`, `releases/`.
+- `planning/`: verbatim `index.py` + `_templates/*`, `.convention-version` (1.1.2), convention `README.md`, `deferred.md`, `decisions/`, `releases/`.
 - `architecture/README.md`: truth-home + promotion rule (capability files authored lazily).
 - `Justfile`: `index` / `check-planning` recipes; `lint-ci` now runs `python planning/index.py --check`.
 - `CLAUDE.md`: `## Workflow` pointer + `## Architecture` promotion reminder.
@@ -431,8 +431,8 @@ Fresh adopt of lesnik512/planning-convention at **v1.1.1** (APPLY.md §§1-6).
 - Migrated the shipped OpenAPI-0.139 spec+plan from `docs/superpowers/` into `planning/changes/2026-07-01.01-openapi-versioning-fastapi-0139/` and removed `docs/superpowers/`.
 - This adoption dogfoods the convention: it lives in `planning/changes/2026-07-02.01-adopt-planning-convention/`.
 
-**Deviation from vanilla APPLY**
-- `planning/index.py` carries a one-line `# ruff: noqa: INP001` header so it passes fast-version's stricter ruff (`select=["ALL"]`, no `INP` ignore) without a `planning/__init__.py` — matching the modern-python convention repos. Keeping `planning/` a non-package also keeps the vendored validator out of `--cov=.`, so coverage stays 100%. No pyproject changes. Note: canonical `main`'s v1.1.1 `index.py` does not yet ship this header, so a future APPLY re-copy must re-add it.
+**Notes**
+- `planning/index.py` (convention **v1.1.2**) ships a file-level `# ruff: noqa: INP001` header, copied verbatim, so it passes fast-version's stricter ruff (`select=["ALL"]`, no `INP` ignore) with **no `planning/__init__.py`** and **no pyproject change**. Keeping `planning/` a non-package also keeps the vendored validator out of `--cov=.`, so coverage stays 100%. Future APPLY re-copies preserve the header (it lives in the canonical file).
 
 Verified locally: `just check-planning` → `planning: OK`; `just lint-ci` green; `just test` green.
 EOF
@@ -449,4 +449,4 @@ Expected: the reusable `community-of-python/community-workflow` matrix (Python 3
 ## Notes
 
 - Do not run `just install` as part of this work — it does `uv lock --upgrade` and could pull unrelated dependency bumps into the branch. This adoption adds no dependencies.
-- If a future convention update lands, re-run the canonical `APPLY.md` UPDATE path (applies only CHANGELOG entries newer than the recorded `1.1.1`); it will overwrite `planning/index.py` and `planning/_templates/*` verbatim again — re-add the `# ruff: noqa: INP001` header to `index.py` afterward (canonical `main` does not yet carry it) and do not create a `planning/__init__.py`.
+- If a future convention update lands, re-run the canonical `APPLY.md` UPDATE path (applies only CHANGELOG entries newer than the recorded `1.1.2`); it overwrites `planning/index.py` and `planning/_templates/*` verbatim. Since v1.1.2's `index.py` carries the `# ruff: noqa: INP001` header, the re-copy keeps it — just keep `planning/` a non-package (no `planning/__init__.py`).
