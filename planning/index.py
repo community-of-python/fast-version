@@ -1,3 +1,4 @@
+# ruff: noqa: INP001  # planning/ is not a Python package (vendored convention validator)
 """Generate the planning index from frontmatter.
 
 Run via ``just index``. Globs ``planning/changes/*/`` (each bundle's
