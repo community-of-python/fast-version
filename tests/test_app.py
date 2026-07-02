@@ -208,6 +208,16 @@ async def test_openapi_schema_distinct_models_with_shared_name_across_versions()
     assert set(schemas[v1_ref.rsplit("/", 1)[-1]]["properties"]) == {"name"}
     assert set(schemas[v2_ref.rsplit("/", 1)[-1]]["properties"]) == {"name", "price"}
 
+    # Each version routes to its own endpoint at runtime with its own body model.
+    v1_response = client.post("/thing/", json={"name": "x"}, headers={"Accept": f"{VERSION_HEADER}; version=1.0"})
+    assert v1_response.status_code == status.HTTP_200_OK
+    v2_response = client.post(
+        "/thing/",
+        json={"name": "x", "price": 1.0},
+        headers={"Accept": f"{VERSION_HEADER}; version=2.0"},
+    )
+    assert v2_response.status_code == status.HTTP_200_OK
+
 
 async def test_openapi_schema_preserves_non_versioned_path_with_colon() -> None:
     # A non-versioned path may legitimately contain a colon (custom-method REST style).
@@ -230,3 +240,6 @@ async def test_openapi_schema_preserves_non_versioned_path_with_colon() -> None:
     assert "/resource:activate" in schema["paths"]
     content = schema["paths"]["/resource:activate"]["post"]["requestBody"]["content"]
     assert set(content.keys()) == {"application/json"}
+
+    response = client.post("/resource:activate", json={"value": "x"})
+    assert response.status_code == status.HTTP_200_OK
