@@ -185,12 +185,12 @@ async def test_openapi_schema_distinct_models_with_shared_name_across_versions()
     router = VersionedAPIRouter()
 
     @router.post("/thing/")
-    async def _create(_: item_v1) -> dict[str, typing.Any]:  # type: ignore[valid-type]
+    async def _create(_: item_v1) -> dict[str, typing.Any]:  # ty: ignore[invalid-type-form]
         return {}
 
     @router.post("/thing/")
     @router.set_api_version((2, 0))
-    async def _create_v2(_: item_v2) -> dict[str, typing.Any]:  # type: ignore[valid-type]
+    async def _create_v2(_: item_v2) -> dict[str, typing.Any]:  # ty: ignore[invalid-type-form]
         return {}
 
     app = fastapi.FastAPI()

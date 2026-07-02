@@ -36,8 +36,10 @@ dev = [
     "pytest-asyncio",
 ]
 lint = [
+    "ty",
     "ruff",
-    "mypy",
+    "eof-fixer",
+    "typing-extensions",
 ]
 
 [build-system]
@@ -47,10 +49,6 @@ build-backend = "uv_build"
 [tool.uv.build-backend]
 module-name = "fast_version"
 module-root = ""
-
-[tool.mypy]
-python_version = "3.10"
-strict = true
 
 [tool.ruff]
 line-length = 120
