@@ -1,6 +1,8 @@
-# Fix OpenAPI version schema generation for FastAPI 0.139+
+---
+summary: Restored multi-version OpenAPI schema generation under FastAPI 0.139+ via a single get_openapi call over version-suffixed route copies (shipped in #12).
+---
 
-Date: 2026-07-01
+# Fix OpenAPI version schema generation for FastAPI 0.139+
 
 ## Problem
 
