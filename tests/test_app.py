@@ -152,10 +152,11 @@ async def test_iter_openapi_routes_finds_prefixed_versioned_paths() -> None:
     init_fastapi_versioning(app=app, vendor_media_type=VERSION_HEADER)
     app.include_router(VERSIONED_ROUTER_OBJ, prefix="/api")
 
-    routes = _iter_openapi_routes(app)
+    routes, versioned_paths = _iter_openapi_routes(app)
 
-    versioned_paths = {route.path_format for route in routes if isinstance(route, VersionedAPIRoute)}
-    assert versioned_paths == {"/api/test/:1.0", "/api/test/:2.0", "/api/test/:1.1"}
+    expected: typing.Final = {"/api/test/:1.0", "/api/test/:2.0", "/api/test/:1.1"}
+    assert versioned_paths == expected
+    assert {route.path_format for route in routes if isinstance(route, VersionedAPIRoute)} == expected
 
 
 async def test_openapi_schema_with_prefix() -> None:
@@ -206,3 +207,26 @@ async def test_openapi_schema_distinct_models_with_shared_name_across_versions()
     schemas = schema["components"]["schemas"]
     assert set(schemas[v1_ref.rsplit("/", 1)[-1]]["properties"]) == {"name"}
     assert set(schemas[v2_ref.rsplit("/", 1)[-1]]["properties"]) == {"name", "price"}
+
+
+async def test_openapi_schema_preserves_non_versioned_path_with_colon() -> None:
+    # A non-versioned path may legitimately contain a colon (custom-method REST style).
+    # It must not be mistaken for a version suffix and rewritten.
+    plain_router = fastapi.APIRouter()
+
+    class _Payload(pydantic.BaseModel):
+        value: str
+
+    @plain_router.post("/resource:activate")
+    async def _activate(_: _Payload) -> dict[str, typing.Any]:
+        return {}
+
+    app = fastapi.FastAPI()
+    init_fastapi_versioning(app=app, vendor_media_type=VERSION_HEADER)
+    app.include_router(plain_router)
+    client = TestClient(app=app)
+
+    schema = client.get("/openapi.json").json()
+    assert "/resource:activate" in schema["paths"]
+    content = schema["paths"]["/resource:activate"]["post"]["requestBody"]["content"]
+    assert set(content.keys()) == {"application/json"}

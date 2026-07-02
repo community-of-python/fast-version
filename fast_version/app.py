@@ -83,7 +83,9 @@ class FastAPIVersioningMiddleware:
         return await self.app(scope, receive, send)
 
 
-def _iter_openapi_routes(app: fastapi.FastAPI) -> list[BaseRoute | RouteContext]:
+def _iter_openapi_routes(
+    app: fastapi.FastAPI,
+) -> tuple[list[BaseRoute | RouteContext], set[str]]:
     """Build the route list for a single ``get_openapi`` call.
 
     Traverses nested routers (FastAPI wraps included routers in an opaque object), so
@@ -92,23 +94,31 @@ def _iter_openapi_routes(app: fastapi.FastAPI) -> list[BaseRoute | RouteContext]
     with its ``path_format`` suffixed by ``:<version>`` so ``get_openapi`` keeps
     same-path versions distinct within one call. A single call is required so FastAPI
     disambiguates same-named-but-different Pydantic models across versions.
+
+    Returns the route list plus the set of suffixed paths it produced, so schema
+    post-processing can identify versioned paths by exact match rather than by sniffing
+    for a colon (a non-versioned path may legitimately contain one, e.g. ``/x:action``).
     """
     routes: list[BaseRoute | RouteContext] = []
+    versioned_paths: set[str] = set()
     for route_context in iter_route_contexts(app.routes):
         original_route = route_context.original_route
         if not isinstance(original_route, VersionedAPIRoute):
             routes.append(route_context)
             continue
+        suffixed_path = f"{route_context.path_format}:{original_route.version_str}"
         route_copy = copy.copy(original_route)
-        route_copy.path_format = f"{route_context.path_format}:{original_route.version_str}"
+        route_copy.path_format = suffixed_path
         routes.append(route_copy)
-    return routes
+        versioned_paths.add(suffixed_path)
+    return routes, versioned_paths
 
 
 def _custom_openapi(self: fastapi.FastAPI) -> dict[str, typing.Any]:
     if self.openapi_schema:
         return self.openapi_schema
 
+    routes, versioned_paths = _iter_openapi_routes(self)
     self.openapi_schema = get_openapi(
         title=self.title,
         version=self.version,
@@ -118,18 +128,22 @@ def _custom_openapi(self: fastapi.FastAPI) -> dict[str, typing.Any]:
         terms_of_service=self.terms_of_service,
         contact=self.contact,
         license_info=self.license_info,
-        routes=_iter_openapi_routes(self),
+        routes=routes,
         webhooks=self.webhooks.routes,
         tags=self.openapi_tags,
         servers=self.servers,
     )
 
+    # Collapse the per-version paths back onto their real path. Only the request/response
+    # bodies are versioned (keyed by media type); operation-level fields (parameters,
+    # summary, tags, ...) are taken from the first-merged version, so versions of the same
+    # path+method should differ only in body schema.
     vendor_media_type = _get_vendor_media_type()
     paths_dict: dict[str, typing.Any] = {}
     raw_path: str
     methods: dict[str, typing.Any]
     for raw_path, methods in self.openapi_schema["paths"].items():
-        if ":" not in raw_path:
+        if raw_path not in versioned_paths:
             paths_dict[raw_path] = methods
             continue
         clean_path, version_str = raw_path.rsplit(":", 1)
