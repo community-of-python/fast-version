@@ -1,5 +1,5 @@
 ---
-summary: Extract Accept-header version parsing out of the middleware into a deep fast_version/accept.py module with a sealed-result interface, testable at its own seam.
+summary: Extracted Accept-header version parsing into fast_version/accept.py behind a sealed-result interface (Ignore | ParsedVersion | ParseError); exhaustive cases moved to the parse seam and DEFAULT_VERSION relocated to accept.py.
 ---
 
 # Extract the Accept-header version parse into a deep module
