@@ -78,6 +78,37 @@ def _iter_openapi_routes(
     return routes, versioned_paths
 
 
+def _collapse_versioned_paths(
+    raw_paths: dict[str, typing.Any],
+    versioned_paths: set[str],
+    vendor_media_type: str,
+) -> dict[str, typing.Any]:
+    """Collapse the per-version ``:<version>`` suffixed paths back onto their real path.
+
+    Only request bodies are versioned (keyed by media type); operation-level fields
+    (parameters, summary, tags, ...) come from the first-merged version, so versions
+    of the same path+method should differ only in body schema.
+    """
+    paths_dict: dict[str, typing.Any] = {}
+    for raw_path, methods in raw_paths.items():
+        if raw_path not in versioned_paths:
+            paths_dict[raw_path] = methods
+            continue
+        clean_path, version_str = raw_path.rsplit(":", 1)
+        for payload in methods.values():
+            if "requestBody" not in payload:
+                continue
+            payload["requestBody"]["content"] = {
+                f"{vendor_media_type}; version={version_str}": content
+                for content in payload["requestBody"]["content"].values()
+            }
+        if clean_path not in paths_dict:
+            paths_dict[clean_path] = methods
+            continue
+        helpers.dict_merge(paths_dict[clean_path], methods)
+    return paths_dict
+
+
 def _custom_openapi(self: fastapi.FastAPI) -> dict[str, typing.Any]:
     if self.openapi_schema:
         return self.openapi_schema
@@ -98,29 +129,9 @@ def _custom_openapi(self: fastapi.FastAPI) -> dict[str, typing.Any]:
         servers=self.servers,
     )
 
-    # Collapse the per-version paths back onto their real path. Only the request/response
-    # bodies are versioned (keyed by media type); operation-level fields (parameters,
-    # summary, tags, ...) are taken from the first-merged version, so versions of the same
-    # path+method should differ only in body schema.
-    vendor_media_type = _get_vendor_media_type()
-    paths_dict: dict[str, typing.Any] = {}
-    raw_path: str
-    methods: dict[str, typing.Any]
-    for raw_path, methods in self.openapi_schema["paths"].items():
-        if raw_path not in versioned_paths:
-            paths_dict[raw_path] = methods
-            continue
-        clean_path, version_str = raw_path.rsplit(":", 1)
-        for payload in methods.values():
-            if "requestBody" not in payload:
-                continue
-            payload["requestBody"]["content"] = {
-                f"{vendor_media_type}; version={version_str}": content
-                for content in payload["requestBody"]["content"].values()
-            }
-        if clean_path not in paths_dict:
-            paths_dict[clean_path] = methods
-            continue
-        helpers.dict_merge(paths_dict[clean_path], methods)
-    self.openapi_schema["paths"] = paths_dict
+    self.openapi_schema["paths"] = _collapse_versioned_paths(
+        self.openapi_schema["paths"],
+        versioned_paths,
+        _get_vendor_media_type(),
+    )
     return self.openapi_schema

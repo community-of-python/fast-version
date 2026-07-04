@@ -7,7 +7,7 @@ from starlette import status
 from starlette.testclient import TestClient
 
 from fast_version import init_fastapi_versioning
-from fast_version.app import _iter_openapi_routes
+from fast_version.app import _collapse_versioned_paths, _iter_openapi_routes
 from fast_version.router import VersionedAPIRoute, VersionedAPIRouter
 from tests.conftest import DOCS_URL_PREFIX, VERSION_HEADER, VERSIONED_ROUTER_OBJ
 
@@ -223,3 +223,40 @@ async def test_openapi_schema_preserves_non_versioned_path_with_colon() -> None:
 
     response = client.post("/resource:activate", json={"value": "x"})
     assert response.status_code == status.HTTP_200_OK
+
+
+async def test_collapse_versioned_paths_passes_through_non_versioned() -> None:
+    raw = {"/simple/": {"get": {"responses": {"200": {"description": "ok"}}}}}
+    result = _collapse_versioned_paths(raw, set(), VERSION_HEADER)
+    assert result == {"/simple/": {"get": {"responses": {"200": {"description": "ok"}}}}}
+
+
+async def test_collapse_versioned_paths_rewrites_request_body_content_key() -> None:
+    raw = {
+        "/test/:1.0": {
+            "post": {"requestBody": {"content": {"application/json": {"schema": {"x": 1}}}}},
+        },
+    }
+    result = _collapse_versioned_paths(raw, {"/test/:1.0"}, VERSION_HEADER)
+    assert set(result) == {"/test/"}
+    content = result["/test/"]["post"]["requestBody"]["content"]
+    assert set(content) == {f"{VERSION_HEADER}; version=1.0"}
+    assert content[f"{VERSION_HEADER}; version=1.0"] == {"schema": {"x": 1}}
+
+
+async def test_collapse_versioned_paths_merges_two_versions_of_same_path() -> None:
+    raw = {
+        "/test/:1.0": {"post": {"requestBody": {"content": {"application/json": {"schema": {"v": 1}}}}}},
+        "/test/:2.0": {"post": {"requestBody": {"content": {"application/json": {"schema": {"v": 2}}}}}},
+    }
+    result = _collapse_versioned_paths(raw, {"/test/:1.0", "/test/:2.0"}, VERSION_HEADER)
+    assert set(result) == {"/test/"}
+    content = result["/test/"]["post"]["requestBody"]["content"]
+    assert set(content) == {f"{VERSION_HEADER}; version=1.0", f"{VERSION_HEADER}; version=2.0"}
+
+
+async def test_collapse_versioned_paths_versioned_without_request_body() -> None:
+    raw = {"/test/:1.0": {"get": {"responses": {"200": {"description": "ok"}}}}}
+    result = _collapse_versioned_paths(raw, {"/test/:1.0"}, VERSION_HEADER)
+    assert set(result) == {"/test/"}
+    assert result["/test/"] == {"get": {"responses": {"200": {"description": "ok"}}}}
