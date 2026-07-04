@@ -56,6 +56,14 @@ def test_parse_bad_version_format(version: str) -> None:
     assert result == ParseError(detail="Version should be in <major>.<minor> format")
 
 
+def test_parse_matches_vendor_case_insensitively() -> None:
+    # Media types are case-insensitive (RFC 9110 8.3.1, RFC 6838 4.2): a mixed-case
+    # configured vendor must still match the lowercased request media type.
+    header: typing.Final = f"{VENDOR}; version=1.0"
+    mixed_case_vendor: typing.Final = "application/vnd.Some.Name+json"
+    assert parse_accept_version(header, mixed_case_vendor) == ParsedVersion(version=(1, 0))
+
+
 def test_get_accept_header_from_scope_normalizes() -> None:
     scope: typing.Final = {"type": "http", "headers": [(b"accept", b"  Foo/Bar  ")]}
     assert get_accept_header_from_scope(scope) == "foo/bar"
