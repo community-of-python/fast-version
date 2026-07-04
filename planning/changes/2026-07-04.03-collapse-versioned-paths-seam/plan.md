@@ -40,16 +40,19 @@ preserving behavior.
   In `tests/test_app.py`, add `_collapse_versioned_paths` to the existing
   `from fast_version.app import ...` line (currently imports `_iter_openapi_routes`),
   and append these four tests. `VERSION_HEADER` is already imported from
-  `tests.conftest`.
+  `tests.conftest`. Note: `test_app.py` has a module-level
+  `pytestmark = [pytest.mark.asyncio]`, so every test in it is `async def`
+  (even sync-logic ones like `test_iter_openapi_routes_...`); a plain `def`
+  test emits a `PytestWarning`. Write these as `async def` to match.
 
   ```python
-  def test_collapse_versioned_paths_passes_through_non_versioned() -> None:
+  async def test_collapse_versioned_paths_passes_through_non_versioned() -> None:
       raw = {"/simple/": {"get": {"responses": {"200": {"description": "ok"}}}}}
       result = _collapse_versioned_paths(raw, set(), VERSION_HEADER)
       assert result == {"/simple/": {"get": {"responses": {"200": {"description": "ok"}}}}}
 
 
-  def test_collapse_versioned_paths_rewrites_request_body_content_key() -> None:
+  async def test_collapse_versioned_paths_rewrites_request_body_content_key() -> None:
       raw = {
           "/test/:1.0": {
               "post": {"requestBody": {"content": {"application/json": {"schema": {"x": 1}}}}},
@@ -62,7 +65,7 @@ preserving behavior.
       assert content[f"{VERSION_HEADER}; version=1.0"] == {"schema": {"x": 1}}
 
 
-  def test_collapse_versioned_paths_merges_two_versions_of_same_path() -> None:
+  async def test_collapse_versioned_paths_merges_two_versions_of_same_path() -> None:
       raw = {
           "/test/:1.0": {"post": {"requestBody": {"content": {"application/json": {"schema": {"v": 1}}}}}},
           "/test/:2.0": {"post": {"requestBody": {"content": {"application/json": {"schema": {"v": 2}}}}}},
@@ -73,7 +76,7 @@ preserving behavior.
       assert set(content) == {f"{VERSION_HEADER}; version=1.0", f"{VERSION_HEADER}; version=2.0"}
 
 
-  def test_collapse_versioned_paths_versioned_without_request_body() -> None:
+  async def test_collapse_versioned_paths_versioned_without_request_body() -> None:
       raw = {"/test/:1.0": {"get": {"responses": {"200": {"description": "ok"}}}}}
       result = _collapse_versioned_paths(raw, {"/test/:1.0"}, VERSION_HEADER)
       assert set(result) == {"/test/"}

@@ -1,5 +1,5 @@
 ---
-summary: Extract the OpenAPI path-collapse/content-rewrite loop out of _custom_openapi into a pure _collapse_versioned_paths function, unit-testable at its own seam, mirroring the already-extracted _iter_openapi_routes.
+summary: Extracted the OpenAPI path-collapse loop into pure _collapse_versioned_paths, unit-tested at its own seam beside _iter_openapi_routes; behavior unchanged.
 ---
 
 # Give the OpenAPI path-collapse its own seam
