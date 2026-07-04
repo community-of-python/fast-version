@@ -1,6 +1,4 @@
-import contextlib
 import copy
-import re
 import typing
 from types import MethodType
 
@@ -11,11 +9,8 @@ from starlette import types
 from starlette.responses import JSONResponse
 from starlette.routing import BaseRoute
 
-from fast_version import helpers
+from fast_version import accept, helpers
 from fast_version.router import VersionedAPIRoute, VersionedAPIRouter
-
-
-_VERSION_RE: typing.Final = re.compile(r"^\d\.\d$")
 
 
 def _get_vendor_media_type() -> str:
@@ -38,48 +33,17 @@ class FastAPIVersioningMiddleware:
         receive: types.Receive,
         send: types.Send,
     ) -> None:
-        error_response: JSONResponse | None = None
-        while True:
-            if scope["type"] != "http":
-                break
-
-            accept_header_from_request = helpers.get_accept_header_from_scope(scope)
-            if not accept_header_from_request or accept_header_from_request == "*/*":
-                break
-
-            media_type: str
-            version_str: str
-            try:
-                media_type, version_str = accept_header_from_request.split(";")
-            except ValueError:
-                break
-
-            if media_type.strip() != _get_vendor_media_type():
-                break
-
-            version = ""
-            version_key = ""
-            with contextlib.suppress(ValueError):
-                version_key, version = version_str.strip().split("=")
-
-            if version_key.lower().strip() != "version":
-                error_response = JSONResponse(
-                    {"detail": "No version in Accept header"},
-                    status_code=400,
-                )
-                break
-
-            if not _VERSION_RE.match(version):
-                error_response = JSONResponse(
-                    {"detail": "Version should be in <major>.<minor> format"},
-                    status_code=400,
-                )
-                break
-
-            scope["version"] = tuple(int(version_part) for version_part in version.split("."))
-            break
-        if error_response:
-            return await error_response(scope, receive, send)
+        if scope["type"] == "http":
+            header = accept.get_accept_header_from_scope(scope)
+            result = accept.parse_accept_version(header, VersionedAPIRouter.VENDOR_MEDIA_TYPE)
+            match result:
+                case accept.ParsedVersion(version):
+                    scope["version"] = version
+                case accept.ParseError(detail):
+                    response = JSONResponse({"detail": detail}, status_code=400)
+                    return await response(scope, receive, send)
+                case accept.Ignore():
+                    pass
         return await self.app(scope, receive, send)
 
 

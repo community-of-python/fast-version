@@ -1,7 +1,5 @@
 import typing
 
-from starlette import datastructures, types
-
 
 def dict_merge(dict1: dict[str, typing.Any], dict2: dict[str, typing.Any]) -> None:
     for key in dict2.keys():
@@ -10,11 +8,6 @@ def dict_merge(dict1: dict[str, typing.Any], dict2: dict[str, typing.Any]) -> No
                 dict_merge(dict1[key], dict2[key])
         else:
             dict1[key] = dict2[key]
-
-
-def get_accept_header_from_scope(scope: types.Scope) -> str:
-    headers = datastructures.Headers(scope=scope)
-    return headers.get("Accept", "").strip().lower()
 
 
 class ClassProperty:
