@@ -42,7 +42,9 @@ def parse_accept_version(accept_header: str, vendor_media_type: str) -> AcceptVe
     except ValueError:
         return Ignore()
 
-    if media_type.strip() != vendor_media_type:
+    # Media types are case-insensitive (RFC 9110 8.3.1); the header side is already
+    # lowercased by get_accept_header_from_scope, so lowercase the vendor to match.
+    if media_type.strip() != vendor_media_type.lower():
         return Ignore()
 
     version_key = ""
