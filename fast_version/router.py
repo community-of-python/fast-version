@@ -6,10 +6,8 @@ from starlette import types
 from starlette.responses import JSONResponse
 from starlette.routing import Match
 
+from fast_version import accept
 from fast_version.helpers import ClassProperty
-
-
-DEFAULT_VERSION: typing.Final = (1, 0)
 
 
 # ruff: noqa: B009, B010
@@ -28,7 +26,7 @@ class VersionedAPIRoute(APIRoute):
         if match != Match.FULL:
             return match, child_scope
 
-        request_version: tuple[int, int] = scope.get("version", DEFAULT_VERSION)
+        request_version: tuple[int, int] = scope.get("version", accept.DEFAULT_VERSION)
         if request_version == self.version:
             return Match.FULL, child_scope
         return Match.NONE, {}
@@ -44,7 +42,7 @@ class VersionedAPIRouter(APIRouter):
     ) -> typing.Callable[[DecoratedCallable], DecoratedCallable]:
         def decorator(func: DecoratedCallable) -> DecoratedCallable:
             if not hasattr(func, "version"):
-                setattr(func, "version", DEFAULT_VERSION)
+                setattr(func, "version", accept.DEFAULT_VERSION)
             version_str = ".".join([str(x) for x in getattr(func, "version")])
 
             class VersionedJSONResponse(JSONResponse):
