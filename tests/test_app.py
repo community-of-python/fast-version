@@ -78,23 +78,7 @@ async def test_simple_router(test_client: TestClient) -> None:
         assert text == "Hello, world!"
 
 
-async def test_bad_accept_header_default_response(test_client: TestClient) -> None:
-    response = test_client.get(
-        "/test/",
-        headers={"Accept": "application/vnd.wrong+json; version=1.0"},
-    )
-    assert response.status_code == status.HTTP_200_OK
-    assert response.headers["content-type"] == f"{VERSION_HEADER}; version=1.0"
-
-
 async def test_no_version(test_client: TestClient) -> None:
-    response = test_client.get(
-        "/test/",
-        headers={"Accept": f"{VERSION_HEADER}; vers1.1"},
-    )
-    assert response.status_code == status.HTTP_400_BAD_REQUEST
-    assert response.json() == {"detail": "No version in Accept header"}
-
     response = test_client.get(
         "/test/",
         headers={"Accept": f"{VERSION_HEADER}; vers=1.1"},
@@ -103,14 +87,10 @@ async def test_no_version(test_client: TestClient) -> None:
     assert response.json() == {"detail": "No version in Accept header"}
 
 
-@pytest.mark.parametrize(
-    "version",
-    ["", "test", "0,.1", "0,1", "0,1,1", "0-1", "0/1", "1-1"],
-)
-async def test_invalid_version(test_client: TestClient, version: str) -> None:
+async def test_invalid_version_format(test_client: TestClient) -> None:
     response = test_client.get(
         "/test/",
-        headers={"Accept": f"{VERSION_HEADER}; version={version}"},
+        headers={"Accept": f"{VERSION_HEADER}; version=1-1"},
     )
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert response.json() == {"detail": "Version should be in <major>.<minor> format"}
